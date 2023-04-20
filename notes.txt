@@ -1,0 +1,93 @@
+
+====================================================================
+             RUN Java Application
+====================================================================
+
+mvn clean install
+java -jar target/helloworld-app.jar
+
+[create custom jar name:
+For Maven >= 3
+
+ <packaging>jar</packaging>
+ <build>
+   <finalNamee>helloworld-app</finalName>
+ </build>
+ ]
+
+ [Add maven wrapper
+ mvn -N wrapper:wrapper -Dmaven=3.9.1
+ ./mvnw clean install
+ ]
+
+ 
+
+====================================================================
+             INVOKE URL
+====================================================================
+http://localhost:8080
+
+======================================================================
+            How to build image for local use
+=====================================================================
+
+a) Create a Dockerfile/Containerfile 
+/Users/indranidey/Documents/_0_0_0_OCP-NOTES-2023/APPLICATION-CATEGORIES/SIMPLE-SPRINGBOOT-IMAGE/spring-boot-helloworld-image
+Dockerfile containes this:
+------------------------------------------
+#
+# Build stage
+#
+FROM maven:3.6.0-jdk-11-slim AS build
+COPY src /home/app/src
+COPY pom.xml /home/app
+RUN mvn -f /home/app/pom.xml clean package
+
+#
+# Package stage
+#
+FROM openjdk:11-jre-slim
+COPY --from=build /home/app/target/*.jar /home/app/app.jar
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","/home/app/app.jar"]
+
+---------------------------------------------------------
+
+b) Build image locally using the Dockerfile
+-- cd to the directory where the Dockerfile is
+
+-- issue these commands
+docker build -t idey/spring-helloworld-app .
+docker run --name -p 8080:8080 s2i-app idey/spring-helloworld-app
+(invoke url to verify: http://localhost:8080)
+
+[docker-commands:
+docker ps
+docker ps -a
+docker stop <container-id>
+docker rm <container-id>
+docker rmi <image-name>  [ from docker ps -a identify the name exaple idey/simple-spring-boot]
+docker stop  <container-id>
+docker start <container-id>
+]
+
+-------------------------------------------------------------
+
+=====================================================================
+              how to build image and push to Quay 
+=====================================================================
+
+docker login quay.io
+{username}
+{password}
+
+Create a repo in quay 
+idey1
+simple-helloworld-app ( make it public )
+
+docker build -t quay.io/idey1/simple-helloworld-app  .
+docker image ( verify the image built)
+docker push quay.io/idey1/simple-helloworld-app:latest
+
+
+======================================================================
