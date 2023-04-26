@@ -1,0 +1,23 @@
+apiVersion: v2
+# name: The name of the Chart.
+# This is the "release name" that you provide when you run
+# "helm install' or "helm upgrade*
+name: simple-helloword-app
+# description: A brief description of the chart.
+description: "simple-helloword-app"
+
+# version: The version of the **chart*s. Use "appVersion' to
+# describe the version of the app itself.
+# Must conform to semantic versioning. Learn more here:
+# https://semver.org
+version: 1.0.0
+
+# applersion: The version of the app being installed by
+# this chart.
+# Must conform to semantic versioning. Learn more here:
+# https://semver.org
+appVersion: 1.0.0
+
+# There are many more chart configurations that can be made
+# than the ones presented here. Learn more at
+# https://helm.sh/docs.

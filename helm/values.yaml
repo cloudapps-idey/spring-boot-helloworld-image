@@ -1,0 +1,24 @@
+config:
+  application_config: application.properties
+  application_name: simple-helloworld-app
+  application_secret: quaypullimage
+  cpu_limit: 1 
+  cpu_request: 100m
+  deploy_environment: dev 
+  environment: dev
+  image: quay.io/idey1/simple-helloworld-app:latest
+  memory_limit: 2Gi
+  memory_request: 500Mi
+  name: simple-helloworld-app
+  namespace: app-demo
+  replicas: 1
+  service account: cryostat-demo-sa
+  sysid: DEY
+networking:
+  servicePort: 8080
+  containerPort: 8080
+  servicePort_jfr_jmx: 9096
+  containerPort_jfr_jmx: 9096
+  jfr_jmx_port_name: jfr-jmx
+  ingress:
+    path: apps.cluster-9vcfw.9vcfw.sandbox2884.opentlc.com
