@@ -1,4 +1,3 @@
-
 ====================================================================
              RUN Java Application
 ====================================================================
@@ -6,35 +5,42 @@
 mvn clean install
 java -jar target/helloworld-app.jar
 
-[create custom jar name:
-For Maven >= 3
-
- <packaging>jar</packaging>
- <build>
-   <finalNamee>helloworld-app</finalName>
- </build>
- ]
-
- [Add maven wrapper
- mvn -N wrapper:wrapper -Dmaven=3.9.1
- ./mvnw clean install
- ]
-
- 
-
 ====================================================================
              INVOKE URL
 ====================================================================
-http://localhost:8080
+http://localhost:8080( Use this for quick test )
 
 ======================================================================
-            How to build image for local use
+            How to build image and run locally
 =====================================================================
+( use package-only-Dockerfile ( prerequsite: build jar with 'mvn clean install') )
 
-a) Create a Dockerfile/Containerfile 
-/Users/indranidey/Documents/_0_0_0_OCP-NOTES-2023/APPLICATION-CATEGORIES/SIMPLE-SPRINGBOOT-IMAGE/spring-boot-helloworld-image
-Dockerfile containes this:
-------------------------------------------
+FROM registry.access.redhat.com/ubi9/openjdk-11 
+ENV PORT 8080
+EXPOSE 8080
+COPY target/*.jar /opt/app.jar
+WORKDIR /opt
+CMD ["java", "-jar", "app.jar"]
+
+
+docker build -t idey/simple-helloworld-app .
+docker run --name -p 8080:8080 s2i-app idey/simple-helloworld-app
+(invoke url to verify)
+
+To Stop the container and delete image:
+docker ps
+docker ps -a
+docker stop <container-id>
+docker rm <container-id>
+docker rmi <image-name>  [ from docker ps -a identify the name exaple idey/simple-spring-boot]
+[Start and Stop container:
+docker stop  <container-id>
+docker start <container-id>
+]
+=====================================================================
+                     Push to Quay 
+=====================================================================
+(use build-n-package-Dockerfile or jmx-Dockerfile)
 #
 # Build stage
 #
@@ -51,31 +57,8 @@ COPY --from=build /home/app/target/*.jar /home/app/app.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/home/app/app.jar"]
 
----------------------------------------------------------
 
-b) Build image locally using the Dockerfile
--- cd to the directory where the Dockerfile is
 
--- issue these commands
-docker build -t idey/spring-helloworld-app .
-docker run --name -p 8080:8080 s2i-app idey/spring-helloworld-app
-(invoke url to verify: http://localhost:8080)
-
-[docker-commands:
-docker ps
-docker ps -a
-docker stop <container-id>
-docker rm <container-id>
-docker rmi <image-name>  [ from docker ps -a identify the name exaple idey/simple-spring-boot]
-docker stop  <container-id>
-docker start <container-id>
-]
-
--------------------------------------------------------------
-
-=====================================================================
-              how to build image and push to Quay 
-=====================================================================
 
 docker login quay.io
 {username}
@@ -85,9 +68,76 @@ Create a repo in quay
 idey1
 simple-helloworld-app ( make it public )
 
-docker build -t quay.io/idey1/simple-helloworld-app  .
+docker build -t quay.io/idey1/simple-helloworld-app .
+docker image ( verify the image built)
+docker push quay.io/idey1/simple-helloworld-app:latest
+
+=====================================================================
+                     Push to Quay  ( for jmx port to test with cryostat )
+=====================================================================
+(use jmx-Dockerfile)
+Dockerfile:
+#
+# Build stage
+#
+FROM maven:3.6.0-jdk-11-slim AS build
+COPY src /home/app/src
+COPY pom.xml /home/app
+RUN mvn -f /home/app/pom.xml clean package
+
+#
+# Package stage
+#
+FROM openjdk:11-jre-slim
+COPY --from=build /home/app/target/*.jar /home/app/app.jar
+ENV JAVA_OPTS=" "
+EXPOSE 8080 9096
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dcom.sun.management.jmxremote.port=9096 -Dcom.sun.management.jmxremote.rmi.port=9096 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -jar /home/app/app.jar"]
+
+
+
+docker login quay.io
+{username}
+{password}
+
+Create a repo in quay 
+idey1
+simple-helloworld-app: ( make it public )
+
+docker build -t quay.io/idey1/simple-helloworld-app .
 docker image ( verify the image built)
 docker push quay.io/idey1/simple-helloworld-app:latest
 
 
-======================================================================
+===================================================================
+                      Deploy via console
+===================================================================
+
+console->namespace->add->container-image
+select image 
+quay.io/idey/spring-helloworld-app
+
+====================================================================
+                     Deploy via Helm 
+====================================================================
+
+Create a helm direcotory
+
+helm
+    -- Chart.yaml
+    -- values.yaml
+    -- templates
+       -- deploymane.yaml
+       -- service.yaml
+       -- route.yaml
+
+helm command to deploy to Openshift
+1. create a project/namespace
+   app-demo
+2. terminal - sign to ocp
+   
+3. cd where helm directory can be seen
+helm upgrade --history-max=1 --atomic --timeout 10m --install simple-helloworld-app chart --set namespace=app-demo --set imgae-repo=quay.io/idey1/simple-helloworld-app:latest --namespace=app-demo --values chart/values.yaml
+
+====================================================================
+
