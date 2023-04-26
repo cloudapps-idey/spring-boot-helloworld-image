@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+    app.kubernetes.io/component: {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/part-of: {{ .Release.Name }}
+    app.openshift.io/runtime-version: latest
+spec:
+  ports:
+    - name: 8080-tcp
+      protocol: TCP
+      port: {{ .Values.networking.servicePort }}
+      targetPort: {{ .Values.networking.targetPort }}
+    - name: {{ .Values.networking.jfr_jmx_port_name }}
+      protocol: TCP
+      port: {{ .Values.networking.servicePort_jfr_jmx }}
+      targetPort: {{ .Values.networking.containerPort_jfr_jmx }}
+  internalTrafficPolicy: Cluster
+  type: ClusterIP
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+  selector:
+    app: {{ .Release.Name }}
+    deployment: {{ .Values.config.application_name }}
